@@ -4,7 +4,7 @@ const update = (req, res) => {
   connection.query(
     `update STUDENT set NAME = "${NAME}" where ID = "${ID}"`,
     (err, result) => {
-      res.json({ message: "updated" });
+      res.status(200).send("Updated Successfully");
     }
   );
   connection.commit();
