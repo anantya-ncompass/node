@@ -1,104 +1,188 @@
+const { compressResponse } = require("../utilities/compression");
 const { connection } = require("../utilities/connection");
+const CustomError = require("../utilities/custom-err");
 const { login, studentformat } = require("../utilities/validation");
+const { getToken, verifyToken } = require("../utilities/auth");
 
 
 
-
-const create = (req, res) => {
-  let { ID, NAME, DEPARTMENT, CGPA } = req.body;
-  console.log(ID, NAME, DEPARTMENT, CGPA);
-  let val = studentformat.validate(req.body)
-    if(val.error){
-        res.status(401).json({
-            success : false,
-            message : val.error.message
-        })
-        return
-    }  
-
+const create = (req, res, next) => {
+  let { id, name, age, contact, marks } = req.body;
+  console.log(req.body);
   connection.query(
-    "INSERT INTO student VALUES (?, ?, ?,?)",
-    [ID, NAME, DEPARTMENT,CGPA],
-    (err, result) => {
-      if (err || result.length === 0) {
-        res.status(400).json({
-          success: err ? false : true,
-          message: err
-            ? err.message
-            : `inserted ${result.affectedRows} records`,
-          data: result,
-        });
+    "INSERT INTO student VALUES (?,?,?,?,?)",
+    [id, name, age, contact, marks],
+   async  (err, result) => {
+      if (err) {
+        next(CustomError.badRequest("Request Error"));
+        return;
       }
-      res.status(201).json({
+      if (result.length === 0) {
+        next();
+        return;
+      }
+      res.setHeader("Content-Encoding", "gzip");
+      res.setHeader("Content-Type", "application/json");
+      let val = await compressResponse({
         success: true,
-        message: `inserted ${result.affectedRows} records`,
+        message: `Fetched ${result.length} records`,
         data: result,
       });
+      console.log(val);
+      res.status(200).send(val);
     }
   );
 };
 
 
+
+
+
 const delete_data = (req, res) => {
-    let id = req.params.id;
-    connection.query(
-      "DELETE FROM student WHERE ID = ?",
-      [id],
-      function (err, results, fields) {
-        res.json(results);
+  let { ID } = req.params;
+  console.log(ID);
+  connection.query(
+    `DELETE FROM biodata WHERE NID = ?`,
+    [ID],
+    (err, results) => {
+      if (err || result.affectedRows === 0) {
+        res.status(400).json({
+          success: err ? false : true,
+          message: err ? err.message : `ID NOT FOUND records`,
+          data: result,
+        });
       }
-    );
-    connection.commit();
-  };
+      res.status(200).json({
+        success: true,
+        message: `deleted ${result.affectedRows} records`,
+        data: result,
+      });
+    }
+  );
+  connection.commit();
+};
 
 
   const read = (req, res) => {
     let  { col_name } = req.body;
     console.log(col_name)
     connection.query(
-      `SELECT ${col_name.replace(/['"]+/g, "")} FROM student;`,
-      function (err, results, fields) {
-        res.status(200).json(results);
+      `SELECT ${col_name} FROM student;`,
+      async (err, result) => {
+      if (err || result.length === 0) {
+        res.status(400).json({
+          success: false,
+          message: err ? err.message : "no record found",
+          data: result,
+        });
+        return;
+      }
+      res.setHeader("Content-Encoding", "gzip");
+      res.setHeader("Content-Type", "application/json");
+      let val = await compressResponse({
+        success: true,
+        message: `Fetched ${result.length} records`,
+        data: result,
+      });
+      console.log(val);
+      res.status(200).send(val);
+  
+  
+    }
+    );
+  
+    };
+
+//readall
+const readAll = (req, res) => {
+  let token = req.body.token;
+  let val = verifyToken(token, "login");
+  console.log(val);
+  if (val) {
+    connection.query(
+      "SELECT * FROM students where id = ?",
+      [val],
+      async (err, result) => {
+        if (err || result.length === 0) {
+          res.status(400).json({
+            success: err ? false : true,
+            message: err ? err.message : "no record found",
+            data: result,
+          });
+          return;
+        }
+        res.setHeader("Content-Encoding", "gzip");
+        res.setHeader("Content-Type", "application/json");
+        let val = await compressResponse({
+          success: true,
+          message: `Fetched ${result.length} records`,
+          data: result,
+        });
+        console.log(val);
+        res.status(200).send(val);
       }
     );
-  };
+  }
+};
 
 
-  const readAll = (req, res) => {
-    connection.query("SELECT * FROM student", function (err, results, fields) {
-      res.json(results);
-    });
-  };
 
 
   const update = (req, res) => {
     let { ID, NAME } = req.params;
     connection.query(
-      `update STUDENT set NAME = "${NAME}" where ID = "${ID}"`,
+      `update student set student_name = ? where id = ?`,
+      [NAME, ID],
       (err, result) => {
-        res.status(200).send("Updated Successfully");
+        if (err || result.length === 0) {
+          res.status(400).json({
+            success: err ? false : true,
+            message: err
+              ? err.message
+              : `inserted ${result.affectedRows} records`,
+            data: result,
+          });
+        }
+        res.status(200).json({
+          success: true,
+          message: `Updated ${result.affectedRows} records`,
+          data: result,
+        });
       }
     );
     connection.commit();
   };
+  
+  
+  
+  
+  
+  
+  
 
-  const studentLogin = (req,res) =>{
-    let val = login .validate(req.body)
-    if(val.error){
-        res.status(401).json({
-            success : false,
-            message : val.error.message
-        })
-        return
-    }  
-    res.status(201).json({
-        success : true,
-        message : "logged in",
-        result : val.value
-    })
-    return
-}
-
+  const studentLogin = (req, res) => {
+    const { id } = req.body;
+    connection.query(
+      "SELECT * from students where id = ?",
+      [id],
+      (err, result) => {
+        if (err || result.length === 0) {
+          res.status(400).json({
+            success: err ? false : true,
+            message: err
+              ? err.message
+              : `inserted records`,
+            data: result,
+          });
+        }
+        let token = getToken(id, "login");
+        res.status(201).json({
+          success: true,
+          token: token,
+        });
+      }
+    );
+  };
 
 module.exports = { studentLogin, create, delete_data, update, read, readAll };
 
