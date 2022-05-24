@@ -1,6 +1,6 @@
 class CustomError extends Error {
   constructor(message) {
-    this.message = message;
+    super(message);
   }
   static badRequest(message) {
     return new CustomError(message);

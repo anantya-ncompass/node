@@ -40,7 +40,7 @@ const create = (req, res, next) => {
 
 
 const delete_data = (req, res) => {
-  let token;
+  /*let token;
   let authHeader = req.headers["authorization"];
   if (authHeader.startsWith("Bearer ")) {
     token = authHeader.substring(7, authHeader.length);
@@ -51,7 +51,7 @@ const delete_data = (req, res) => {
   let val = verifyToken(token, "login");
   if (!val) {
     return;
-  }
+  }*/
   let { ID } = req.params;
   console.log(ID);
   connection.query(
@@ -115,13 +115,8 @@ const delete_data = (req, res) => {
 
 
 const readAll = (req, res) => {
-  let token = req.body.token;
-  let val = verifyToken(token, "login");
-  console.log(val);
-  if (val) {
     connection.query(
-      "SELECT * FROM students where id = ?",
-      [val],
+      "SELECT * FROM students ",
       async (err, result) => {
         if (err || result.length === 0) {
           res.status(400).json({
@@ -143,7 +138,7 @@ const readAll = (req, res) => {
       }
     );
   }
-};
+
 
 
 
