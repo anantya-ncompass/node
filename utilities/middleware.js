@@ -1,4 +1,4 @@
-const { studentformat, login } = require("./validation")
+const { studentformat, login, deleteSchema, readSchema, updateSchema } = require("./validation")
 
 
 
@@ -26,4 +26,41 @@ next();
 }
 
 
-module.exports = {Studentval, Studentlog}
+const deleteValidation = (req, res, next) => {
+    let validation = deleteSchema.validate(req.params);
+    if (validation.error) {
+      res.status(401).json({
+        success: false,
+        message: validation.error.message,
+      });
+    }
+    next();
+  };
+
+
+const readValidation = (req, res, next) => {
+    let validation = readSchema.validate(req.body);
+    if (validation.error) {
+      res.status(401).json({
+        success: false,
+        message: validation.error.message,
+      });
+    }
+    next();
+  };
+
+
+const updateValidation = (req, res, next) => {
+    let validation = updateSchema.validate(req.params);
+    if (validation.error) {
+      res.status(401).json({
+        success: false,
+        message: validation.error.message,
+      })
+      return
+    }
+    next();
+  };
+ 
+
+module.exports = {Studentval, Studentlog, deleteValidation, readValidation, updateValidation  }

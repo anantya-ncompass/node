@@ -1,4 +1,4 @@
-class CustomError {
+class CustomError extends Error {
   constructor(message) {
     this.message = message;
   }

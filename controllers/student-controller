@@ -3,15 +3,16 @@ const { connection } = require("../utilities/connection");
 const CustomError = require("../utilities/custom-err");
 const { login, studentformat } = require("../utilities/validation");
 const { getToken, verifyToken } = require("../utilities/auth");
-
+require("dotenv").config()
 
 
 const create = (req, res, next) => {
-  let { id, name, age, contact, marks } = req.body;
+
+  let {ID, NAME, DEPARTMENT, CGPA } = req.body;
   console.log(req.body);
   connection.query(
-    "INSERT INTO student VALUES (?,?,?,?,?)",
-    [id, name, age, contact, marks],
+    "INSERT INTO student VALUES (?,?,?,?)",
+    [ID, NAME, DEPARTMENT, CGPA],
    async  (err, result) => {
       if (err) {
         next(CustomError.badRequest("Request Error"));
@@ -39,18 +40,32 @@ const create = (req, res, next) => {
 
 
 const delete_data = (req, res) => {
+  let token;
+  let authHeader = req.headers["authorization"];
+  if (authHeader.startsWith("Bearer ")) {
+    token = authHeader.substring(7, authHeader.length);
+  } else {
+    token = authHeader;
+  }
+  console.log(token);
+  let val = verifyToken(token, "login");
+  if (!val) {
+    return;
+  }
   let { ID } = req.params;
   console.log(ID);
   connection.query(
-    `DELETE FROM biodata WHERE NID = ?`,
+    `DELETE FROM student WHERE ID = ?`,
     [ID],
-    (err, results) => {
+    (err, result) => {
       if (err || result.affectedRows === 0) {
         res.status(400).json({
           success: err ? false : true,
           message: err ? err.message : `ID NOT FOUND records`,
           data: result,
+        
         });
+        return;
       }
       res.status(200).json({
         success: true,
@@ -61,6 +76,9 @@ const delete_data = (req, res) => {
   );
   connection.commit();
 };
+
+
+
 
 
   const read = (req, res) => {
@@ -93,7 +111,9 @@ const delete_data = (req, res) => {
   
     };
 
-//readall
+
+
+
 const readAll = (req, res) => {
   let token = req.body.token;
   let val = verifyToken(token, "login");
@@ -130,8 +150,9 @@ const readAll = (req, res) => {
 
   const update = (req, res) => {
     let { ID, NAME } = req.params;
+    console.log(req.params);
     connection.query(
-      `update student set student_name = ? where id = ?`,
+      `update student set NAME = ? where ID = ?`,
       [NAME, ID],
       (err, result) => {
         if (err || result.length === 0) {
@@ -142,10 +163,11 @@ const readAll = (req, res) => {
               : `inserted ${result.affectedRows} records`,
             data: result,
           });
+          return
         }
         res.status(200).json({
           success: true,
-          message: `Updated ${result.affectedRows} records`,
+          message: `Updated records`,
           data: result,
         });
       }
@@ -183,6 +205,8 @@ const readAll = (req, res) => {
       }
     );
   };
+
+
 
 module.exports = { studentLogin, create, delete_data, update, read, readAll };
 
