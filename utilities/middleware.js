@@ -12,7 +12,7 @@ const logval = (req, res, next) => {let val = login.validate(req.body)
 };
 
 
-const productval = (req, res, next) => {let val = product.validate(req.body)
+const productval = (req, res, next) => {let val = product.validate(req.query)
     if(val.error){
         res.status(401).json({
             success : false,

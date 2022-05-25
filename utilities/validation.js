@@ -2,15 +2,15 @@ const joi = require("joi");
 
 
 const login = joi.object({
-email : joi.string().email().required(),
-password : joi.string().min(8).required()
+Email : joi.string().email().required(),
+Password : joi.string().min(4).required()
 });
 
 
 const product = joi.object({
-    page: joi.number().required(),
-    sort: joi.string(),
-    filter: joi.string()
+    Page: joi.number().required(),
+    Sort: joi.string(),
+    Filter: joi.allow()
 });
 
 module.exports = {

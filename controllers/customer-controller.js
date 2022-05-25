@@ -36,7 +36,7 @@ const CustomerLogin = (req, res) => {
 
 
   const CustomerDetails = (req, res) => { 
-    let { Email, Details } = req.body;
+    let { Email, Details } = req.query;
     Details = Details ? Details : "Customers.Customer_ID,Customer_Name, Contact, Gender, Address, Customers.Customer_Email ,Products.Product_ID, Product_Name, Product_Model, Availability, Ratings, Type, Product_Price";
     console.log(Details)
     console.log(Email)
@@ -74,7 +74,71 @@ const CustomerLogin = (req, res) => {
 
 
 
-    const ProductDetials = (req, res) => { 
+
+
+    const ProductDetials = async (req, res, next) => {
+        try {
+          let { Page, Sort, Filter } = req.query;
+          console.log(Page, Sort, Filter);
+          if (Sort) {
+            Sort = "ORDER BY " + Sort;
+          } else {
+            Sort = "";
+          }
+          let queries = [];
+          const query = (queries, Filter) => {
+            Filter = JSON.parse(Filter);
+            for (let i in Filter) {
+              if (i == "Ratings") {
+                let options = Filter[i].split(",");
+                queries.push(`${i} ${options[1]} ${options[0]}`);
+              }
+              if (i == "Product_Name") {
+                queries.push(`${i} LIKE '%${Filter[i]}%'`);
+              }
+              if (i == "Product_Price") {
+                let options = Filter[i].split(",");
+                queries.push(`${i} ${options[1]} ${options[0]}`);
+              }
+              if (i == "Type") {
+                queries.push(`${i} = '${Filter[i]}'`);
+              }
+            }
+            queries = queries.join(" and ", ",");
+            return queries;
+          };
+          if (Filter) {
+            queries = "WHERE " + query(queries, Filter);
+          }
+          console.log(queries);
+          const [result, feild] = await connection
+            .promise()
+            .query(
+              `select * from Products ${queries} ${Sort} limit 20 offset ${
+                (Page - 1) * 20
+              }`
+            );
+          res.setHeader("Content-Encoding", "gzip");
+          res.setHeader("Content-Type", "application/json");
+          let val = await compressResponse({
+            success: true,
+            message: `Fetched ${result.length} records`,
+            data: result,
+          });
+          res.status(200).send(val);
+        } catch (error) {
+          next(new Error(error));
+          return;
+        }
+      };
+
+
+module.exports = { CustomerLogin, CustomerDetails, ProductDetials };
+
+
+
+
+ /* const ProductDetials = (req, res) => { 
         let {Page, Sort} = req.body;
         console.log((Page-1)*20);
         console.log(Sort);
@@ -104,16 +168,7 @@ const CustomerLogin = (req, res) => {
         }
         );
       
-        };
-    
-
-
-module.exports = { CustomerLogin, CustomerDetails, ProductDetials };
-
-
-
-
-
+        };*/
 
 
 

@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 const CustomError = require("./custom-err");
 const getToken = (payload, secret) => {
-  return jwt.sign(payload, secret);
+  return jwt.sign({payload}, secret, {expiresIn: "10m"});
 };
 const verifyToken = (token, secret) => {
   return jwt.verify(token, secret);
